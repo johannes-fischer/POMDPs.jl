@@ -126,8 +126,9 @@ Return the integer index of observation `o`. Used for discrete models only.
 function obs_index end
 
 """
-    vec{SO}(problem::Union{MDP{SO},POMDP{SO}}, so::S)
+    convert{SO}(problem::Union{MDP{SO},POMDP{SO}}, so::S)
 
-Convert a state or observaton to vectorized form of floats.
+Convert a state or observaton to vectorized form of floats or
+convert a vectorized form of floats to a state or observation.
 """
-Base.vec
+Base.convert
