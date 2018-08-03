@@ -27,6 +27,7 @@ export
     observation,
     reward,
     isterminal,
+    isterminal_act,
     isterminal_obs,
 
     # Generative model functions
