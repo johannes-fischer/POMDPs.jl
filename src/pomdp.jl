@@ -114,12 +114,35 @@ Check if an observation is terminal.
 isterminal_obs(problem::POMDP, observation) = false
 
 """
+    isterminal_act{S,A,O}(problem::POMDP{S,A,O}, action::A)
+    isterminal_act{S,A}(problem::MDP{S,A}, action::A)
+
+Check if an action is terminal.
+"""
+isterminal_act(problem::Union{POMDP,MDP}, action) = false
+
+"""
     isterminal{S,A,O}(problem::POMDP{S,A,O}, state::S)
     isterminal{S,A}(problem::MDP{S,A}, state::S)
 
 Check if state s is terminal
 """
 isterminal(problem::Union{POMDP,MDP}, state) = false
+
+"""
+    isterminal{S,A,O}(problem::POMDP{S,A,O}, state::S, action::A, observation::O)
+
+Check if state s, action a or observation o is terminal
+"""
+isterminal(problem::POMDP, state, action, observation) = isterminal(problem, state) || isterminal_act(problem, action) || isterminal_obs(problem, observation)
+
+"""
+    isterminal{S,A,O}(problem::POMDP{S,A,O}, state::S, action::A)
+    isterminal{S,A}(problem::MDP{S,A}, state::S, action::A)
+
+Check if state s or action a is terminal
+"""
+isterminal(problem::Union{POMDP,MDP}, state, action) = isterminal(problem, state) || isterminal_act(problem, action)
 
 """
     initial_state_distribution(pomdp::POMDP)
@@ -200,3 +223,6 @@ function Base.convert(T::Type, x::X, problem::Union{MDP,POMDP}) where X
     Base.depwarn("POMDPs.convert is deprecated. Please use convert_s, convert_a, or convert_o.", :convert)
     return convert_s(T, x, problem)
 end
+
+
+function max_possible_weight end
