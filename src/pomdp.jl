@@ -134,7 +134,7 @@ isterminal(problem::Union{POMDP,MDP}, state) = false
 
 Check if state s, action a or observation o is terminal
 """
-isterminal(problem::POMDP, state, action, observation) = isterminal(problem, state) || isterminal_act(problem, action) || isterminal_obs(problem, observation)
+isterminal(problem::POMDP, state, action, observation) = isterminal(problem, state, action) || isterminal_obs(problem, observation)
 
 """
     isterminal{S,A,O}(problem::POMDP{S,A,O}, state::S, action::A)
