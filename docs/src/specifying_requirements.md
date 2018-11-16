@@ -19,8 +19,8 @@ The [`@POMDP_require`](@ref) macro is the main point of interaction with the req
 ```julia
 @POMDP_require solve(solver::ValueIterationSolver, mdp::Union{MDP,POMDP}) begin
     P = typeof(mdp)
-    S = state_type(P)
-    A = action_type(P)
+    S = statetype(P)
+    A = actiontype(P)
     @req discount(::P)
     @req n_states(::P)
     @req n_actions(::P)
@@ -28,7 +28,7 @@ The [`@POMDP_require`](@ref) macro is the main point of interaction with the req
     @subreq ordered_actions(mdp)
     @req transition(::P,::S,::A)
     @req reward(::P,::S,::A,::S)
-    @req state_index(::P,::S)
+    @req stateindex(::P,::S)
     as = actions(mdp)
     ss = states(mdp)
     @req iterator(::typeof(as))
@@ -52,18 +52,18 @@ The [`@req`](@ref) macro is used to specify a required function. Each [`@req`](@
 
 While the `@POMDP_require` macro is used to specify requirements for a specific method, the [`requirements_info`](@ref) function is a more flexible communication tool for a solver writer. [`requirements_info`](@ref) should print out a message describing the requirements for a solver. The exact form of the message is up to the solver writer, but it should be carefully thought-out because problem-writers will be directed to call the function (via the `@requirements_info` macro) as the first step in using a new solver (see [tutorial](def_pomdp.md)).
 
-By default, `requirements_info` calls [`show_requirements`](@req) on the `solve` function. This is adequate in many cases, but in some cases, notably for online solvers such as [MCTS](https://github.com/JuliaPOMDP/MCTS.jl), the requirements for [`solve`](@ref) do not give a good indication of the requirements for using the solver. Instead, the requirements for [`action`](@ref) should be displayed. The following example shows a more informative version of `requirements_info` from the MCTS package. Since [`action`](@ref) requires a state argument, `requirements_info` prompts the user to provide one.
+By default, `requirements_info` calls [`show_requirements`](@ref) on the `solve` function. This is adequate in many cases, but in some cases, notably for online solvers such as [MCTS](https://github.com/JuliaPOMDP/MCTS.jl), the requirements for [`solve`](@ref) do not give a good indication of the requirements for using the solver. Instead, the requirements for [`action`](@ref) should be displayed. The following example shows a more informative version of `requirements_info` from the MCTS package. Since [`action`](@ref) requires a state argument, `requirements_info` prompts the user to provide one.
 
 ```julia
 function POMDPs.requirements_info(solver::AbstractMCTSSolver, problem::Union{POMDP,MDP})
-    if state_type(typeof(problem)) <: Number
-        s = one(state_type(typeof(problem)))
+    if statetype(typeof(problem)) <: Number
+        s = one(statetype(typeof(problem)))
         requirements_info(solver, problem, s)
     else
         println("""
             Since MCTS is an online solver, most of the computation occurs in `action(policy, state)`. In order to view the requirements for this function, please, supply a state as the third argument to `requirements_info`, e.g.
 
-                @requirements_info $(typeof(solver))() $(typeof(problem))() $(state_type(typeof(problem)))()
+                @requirements_info $(typeof(solver))() $(typeof(problem))() $(statetype(typeof(problem)))()
 
                 """)
     end

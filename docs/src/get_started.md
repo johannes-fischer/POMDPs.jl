@@ -7,7 +7,7 @@ Here is a short piece of code that solves the Tiger POMDP using QMDP, and evalua
 have the QMDP, POMDPModels, and POMDPToolbox modules installed.
 
 ```julia
-using QMDP, POMDPModels, POMDPToolbox
+using QMDP, POMDPModels, POMDPSimulators
 
 # initialize problem and solver
 pomdp = TigerPOMDP() # from POMDPModels
@@ -18,8 +18,8 @@ policy = solve(solver, pomdp)
 
 #evaluate the policy
 belief_updater = updater(policy) # the default QMPD belief updater (discrete Bayesian filter)
-init_dist = initial_state_distribution(pomdp) # from POMDPModels
-hr = HistoryRecorder(max_steps=100) # from POMDPToolbox
+init_dist = initialstate_distribution(pomdp) # from POMDPModels
+hr = HistoryRecorder(max_steps=100) # from POMDPSimulators
 hist = simulate(hr, pomdp, policy, belief_updater, init_dist) # run 100 step simulation
 println("reward: $(discounted_reward(hist))")
 ```

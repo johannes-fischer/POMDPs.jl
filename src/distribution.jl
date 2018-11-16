@@ -9,14 +9,14 @@ Return a random element from distribution or space `d`.
 
 If `d` is a state or transition distribution, the sample will be a state; if `d` is an action distribution, the sample will be an action or if `d` is an observation distribution, the sample will be an observation.
 """
-Base.rand
+function rand end
 
 """
     pdf(d::Any, x::Any)
 
 Evaluate the probability density of distribution `d` at sample `x`.
 """
-function pdf end # maybe eventually this should be Distributions.pdf
+function pdf end
 
 """
     mode(d::Any)
@@ -30,16 +30,24 @@ function mode end
 
 Return the mean of a distribution d.
 """
-Base.mean
+function mean end
+
+"""
+    support(d::Any)
+
+Return the possible values that can be sampled from distribution d. Values with zero probability may be skipped.
+"""
+function support end
 
 """
     iterator(d::Any)
 
-Return an iterable object (array or custom iterator) that iterates over possible values of distribution or space `d`. Values with zero probability may be skipped.
+DEPRECATED. Return an iterable object (array or custom iterator) that iterates over possible values of distribution `d`. Values with zero probability may be skipped.
 """
-function iterator end
-
-iterator(a::AbstractArray) = a
+@generated function iterator(x::Any)
+    @warn("POMDPs.iterator(x) is deprecated. Simply iterate over the space directly or use support(d) for distributions.")
+    return :(support(x))
+end
 
 """
     sampletype(T::Type)
@@ -54,5 +62,5 @@ function sampletype end
 sampletype(d::Any) = sampletype(typeof(d))
 sampletype(t::Type) = throw(MethodError(sampletype, (t,)))
 
-implemented{T<:Type}(f::typeof(sampletype), TT::Type{Tuple{T}}) = method_exists(f, TT) && which(f, TT).module != POMDPs
-implemented{T}(f::typeof(sampletype), ::Type{Tuple{T}}) = implemented(f, Tuple{Type{T}})
+implemented(f::typeof(sampletype), TT::Type{Tuple{T}}) where T<:Type = hasmethod(f, TT) && which(f, TT).module != POMDPs
+implemented(f::typeof(sampletype), ::Type{Tuple{T}}) where T = implemented(f, Tuple{Type{T}})

@@ -12,7 +12,7 @@ generate_sr(pomdp, s, a, rng) -> (s, r)
 generate_so(pomdp, s, a, rng) -> (s, o)
 generate_or(pomdp, s, a, sp, rng) -> (o, r)
 generate_sor(pomdp, s, a, rng) -> (s, o, r)
-initial_state(pomdp, rng) -> s
+initialstate(pomdp, rng) -> s
 ```
 
 Each `generate_` function is a single step simulator that returns a new state, observation, reward, or a combination given the current state and action (and `sp` in some cases). [`rng` is a random number generator such as `Base.GLOBAL_RNG` or another `MersenneTwister` that is passed as an argument and should be used to generate all random numbers within the function to ensure that all simulations are exactly repeatable.](http://docs.julialang.org/en/release-0.5/stdlib/numbers/#random-numbers)
@@ -23,60 +23,7 @@ A problem writer will generally only have to implement one or two of these funct
 
 ## Example
 
-The following example shows an implementation of the Crying Baby problem \[1\]. A definition of this problem using the explicit interface is given in the [POMDPModels package](https://github.com/JuliaPOMDP/POMDPModels.jl).
-
-```julia
-importall POMDPs
-
-# state: true=hungry, action: true=feed, obs: true=crying
-
-type BabyPOMDP <: POMDP{Bool, Bool, Bool}
-    r_feed::Float64
-    r_hungry::Float64
-    p_become_hungry::Float64
-    p_cry_when_hungry::Float64
-    p_cry_when_not_hungry::Float64
-    discount::Float64
-end
-BabyPOMDP() = BabyPOMDP(-5., -10., 0.1, 0.8, 0.1, 0.9)
-
-discount(p::BabyPOMDP) = p.discount
-
-function generate_s(p::BabyPOMDP, s::Bool, a::Bool, rng::AbstractRNG)
-    if s # hungry
-        return true
-    else # not hungry
-        return rand(rng) < p.p_become_hungry ? true : false
-    end
-end
-
-function generate_o(p::BabyPOMDP, s::Bool, a::Bool, sp::Bool, rng::AbstractRNG)
-    if sp # hungry
-        return rand(rng) < p.p_cry_when_hungry ? true : false
-    else # not hungry
-        return rand(rng) < p.p_cry_when_not_hungry ? true : false
-    end
-end
-
-# r_hungry
-reward(p::BabyPOMDP, s::Bool, a::Bool) = (s ? p.r_hungry : 0.0) + (a ? p.r_feed : 0.0)
-
-initial_state_distribution(p::BabyPOMDP) = [false] # note rand(rng, [false]) = false, so this is encoding that the baby always starts out full
-```
-
-This can be solved with the POMCP solver.
-
-```julia
-using BasicPOMCP
-using POMDPToolbox
-
-pomdp = BabyPOMDP()
-solver = POMCPSolver()
-planner = solve(solver, pomdp)
-
-hist = simulate(HistoryRecorder(max_steps=10), pomdp, planner);
-println("reward: $(discounted_reward(hist))")
-```
+An example of defining a problem with the generative interface can be found at [https://github.com/JuliaPOMDP/POMDPExamples.jl/blob/master/notebooks/Defining-a-POMDP-with-the-Generative-Interface.ipynb](https://github.com/JuliaPOMDP/POMDPExamples.jl/blob/master/notebooks/Defining-a-POMDP-with-the-Generative-Interface.ipynb)
 
 ## Which function(s) should I implement for my problem / use in my solver?
 

@@ -1,5 +1,7 @@
 # POMDP model functions
 """
+    POMDP{S,A,O}
+
 Abstract base type for a partially observable Markov decision process.
 
     S: state type
@@ -9,6 +11,8 @@ Abstract base type for a partially observable Markov decision process.
 abstract type POMDP{S,A,O} end
 
 """
+    MDP{S,A}
+
 Abstract base type for a fully observable Markov decision process.
 
     S: state type
@@ -79,7 +83,8 @@ function observation end
 Return the observation distribution for the a-s' tuple (action and next state)
 """
 observation(problem::POMDP, a, sp) = observation(problem, sp)
-@impl_dep {P<:POMDP,S,A} observation(::P,::A,::S) observation(::P,::S)
+# @impl_dep observation(::P,::A,::S) where {P<:POMDP,S,A} observation(::P,::S)
+@impl_dep observation(::P,::A,::S) where {P<:POMDP,S,A} observation(::P,::S)
 
 """
     observation{S,A,O}(problem::POMDP{S,A,O}, state::S, action::A, statep::S)
@@ -87,7 +92,7 @@ observation(problem::POMDP, a, sp) = observation(problem, sp)
 Return the observation distribution for the s-a-s' tuple (state, action, and next state)
 """
 observation(problem::POMDP, s, a, sp) = observation(problem, a, sp)
-@impl_dep {P<:POMDP,S,A} observation(::P,::S,::A,::S) observation(::P,::A,::S)
+@impl_dep observation(::P,::S,::A,::S) where {P<:POMDP,S,A} observation(::P,::A,::S)
 
 """
     reward{S,A,O}(problem::POMDP{S,A,O}, state::S, action::A)
@@ -104,14 +109,7 @@ function reward end
 Return the immediate reward for the s-a-s' triple
 """
 reward(problem::Union{POMDP,MDP}, s, a, sp) = reward(problem, s, a)
-@impl_dep {P<:Union{POMDP,MDP},S,A} reward(::P,::S,::A,::S) reward(::P,::S,::A)
-
-"""
-    isterminal_obs{S,A,O}(problem::POMDP{S,A,O}, observation::O)
-
-Check if an observation is terminal.
-"""
-isterminal_obs(problem::POMDP, observation) = false
+@impl_dep reward(::P,::S,::A,::S) where {P<:Union{POMDP,MDP},S,A} reward(::P,::S,::A)
 
 """
     isterminal_act{S,A,O}(problem::POMDP{S,A,O}, action::A)
@@ -145,35 +143,39 @@ Check if state s or action a is terminal
 isterminal(problem::Union{POMDP,MDP}, state, action) = isterminal(problem, state) || isterminal_act(problem, action)
 
 """
-    initial_state_distribution(pomdp::POMDP)
-    initial_state_distribution(mdp::MDP)
+    initialstate_distribution(pomdp::POMDP)
+    initialstate_distribution(mdp::MDP)
 
 Return a distribution of the initial state of the pomdp or mdp.
 """
-function initial_state_distribution end
+function initialstate_distribution end
+@deprecate initial_state_distribution initialstate_distribution
 
 """
-    state_index{S,A,O}(problem::POMDP{S,A,O}, s::S)
-    state_index{S,A}(problem::MDP{S,A}, s::S)
+    stateindex{S,A,O}(problem::POMDP{S,A,O}, s::S)
+    stateindex{S,A}(problem::MDP{S,A}, s::S)
 
 Return the integer index of state `s`. Used for discrete models only.
 """
-function state_index end
+function stateindex end
+@deprecate state_index stateindex
 
 """
-    action_index{S,A,O}(problem::POMDP{S,A,O}, a::A)
-    action_index{S,A}(problem::MDP{S,A}, a::A)
+    actionindex{S,A,O}(problem::POMDP{S,A,O}, a::A)
+    actionindex{S,A}(problem::MDP{S,A}, a::A)
 
 Return the integer index of action `a`. Used for discrete models only.
 """
-function action_index end
+function actionindex end
+@deprecate action_index actionindex
 
 """
-    obs_index{S,A,O}(problem::POMDP{S,A,O}, o::O)
+    obsindex{S,A,O}(problem::POMDP{S,A,O}, o::O)
 
 Return the integer index of observation `o`. Used for discrete models only.
 """
-function obs_index end
+function obsindex end
+@deprecate obs_index obsindex
 
 """
     convert_s(::Type{V}, s, problem::Union{MDP,POMDP}) where V<:AbstractArray

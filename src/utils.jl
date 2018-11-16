@@ -1,145 +1,84 @@
-"""
-    add(solver_name::AbstractString, v::Bool=true)
+add(solver_name::AbstractString, v::Bool=true) = error("""
+                                                        `POMDPs.add` has been removed.
+                                                        To add POMDPs packages, use `POMDPs.add_registry()` with standard `Pkg.add`
+                                                       """)
 
-Downloads and installs a registered solver with name `solver_name`. This is a light wrapper around `Pkg.clone()`, and it does nothing special or different other than looking up the URL.
+add_all(;native_only=false, v::Bool=true) = error("""
+                                                    `POMDPs.add_all` has been removed.
+                                                    To add POMDPs packages, use `POMDPs.add_registry()` with standard `Pkg.add`
+                                                  """)
+remove_all() = error("""
+                     `POMDPs.remove_all` has been removed.
+                     To remove POMDPs packages, use `POMDPs.add_registry()` with standard `Pkg.rm`
+                     """)
 
-`v` is a verbose flag, when set to true, function will notify the user if solver is already installed.
-This function is not exported, and must be called:
-```julia
-julia> using POMDPs
-julia> POMDPs.add("MCTS")
-```
-"""
-function add(solver_name::AbstractString, v::Bool=true)
-    @assert solver_name in SUPPORTED_PACKAGES string("The JuliaPOMDP package: ", solver_name, " is not supported")
-    full_url = string(REMOTE_URL, solver_name, ".jl")
-    if solver_name in REGISTERED_PACKAGES
-        Pkg.add(solver_name)
-    else
-        try
-            Pkg.clone(full_url)
-            Pkg.build(solver_name)
-        catch ex
-            if isa(ex, Base.Pkg.PkgError) && ex.msg == "$solver_name already exists"
-                v ? (println("Package already installed")) : (nothing)
-            else
-                rethrow(ex)
-            end
-        end
-    end
-end
+build() = error("""
+                `POMDPs.build` has been removed.
+                To build POMDPs packages, use `POMDPs.add_registry()` with standard `Pkg.build`
+                """)
 
-"""
-    add_all()
-
-Downloads and installs all the packages supported by JuliaPOMDP
-"""
-function add_all(;native_only=false)
-    native_only ? pkg_set = NATIVE_PACKAGES : pkg_set = SUPPORTED_PACKAGES 
-    for p in pkg_set
-        add(p, false)
-    end
-end
-
-
-
-"""
-    remove(solver_name::AbstractString)
-
-Remove a JuliaPOMDP package.
-"""
-function remove(solver_name::AbstractString)
-    @assert solver_name in SUPPORTED_PACKAGES string("The JuliaPOMDP package: ", solver_name, " is not supported")
-    Pkg.rm(solver_name)
-end
-
-
-"""
-    remove_all()
-
-Removes all the installed packages supported by JuliaPOMDP
-"""
-function remove_all()
-    for p in SUPPORTED_PACKAGES
-        Pkg.rm(p)
-    end
-end
-
-
-"""
-    update()
-
-Updates all the installed packages
-"""
-function update()
-    for p in SUPPORTED_PACKAGES
-        # check if package is intalled
-        if isdir(Pkg.dir(p))
-            Pkg.checkout(p)
-        end
-    end
-end
-
-"""
-    build()
-
-Builds all the existing packages
-"""
-function build()
-    for p in SUPPORTED_PACKAGES
-        # see of package is intalled
-        if isdir(Pkg.dir(p))
-            Pkg.build(p)
-        end
-    end
-end
-
-
-
-"""
-    test_all()
-
-Tests all the JuliaPOMDP packages installed on your current machine.
-"""
-function test_all(v::Bool=false)
-    for p in SUPPORTED_PACKAGES
-        try
-            Pkg.test(p)
-        catch
-            v ? (println("Package ", p, "not being tested")) : (nothing)
-        end
-    end
-end
+test_all(v::Bool=false) = error("""
+                                `POMDPs.test_all` has been removed.
+                                To test POMDPs packages, use `POMDPs.add_registry()` with standard `Pkg.test`
+                                """)
 
 """
     available()
 
-Prints all the available packages in JuliaPOMDP
+Prints all the available packages in the JuliaPOMDP registry
 """
 function available()
-    for p in SUPPORTED_PACKAGES
-        println(p)
+    reg_dict = read_registry(joinpath(Pkg.depots1(), "registries", "JuliaPOMDP", "Registry.toml"))
+    for (uuid, pkginfo) in reg_dict["packages"]
+        println(pkginfo["name"])
     end
 end
 
-# This does not appear to work
-#=
-"""
-    POMDPs.get_methods(flist::Vector{Function})
 
-Takes in a vector of function names, and returns the associated POMDPs.jl methods
 """
-function get_methods(flist::Vector{Function})
-    ms = Method[]
-    # loop though functions
-    for f in flist
-        t = nothing
-        # find the method from POMDPs.jl
-        for m in methods(f)
-            t = m
+    add_registry()
+
+Adds the JuliaPOMDP registry
+"""
+function add_registry(;url=POMDP_REGISTRY)
+    depot = Pkg.depots1()
+    # clone to temp dir first
+    tmp = mktempdir()
+    Base.shred!(LibGit2.CachedCredentials()) do creds
+        LibGit2.with(Pkg.GitTools.clone(url, tmp; header = "registry from $(repr(url))", credentials = creds)) do repo
         end
-        push!(ms, t)
     end
-    ms
+    # verify that the clone looks like a registry
+    if !isfile(joinpath(tmp, "Registry.toml"))
+        Pkg.Types.pkgerror("no `Registry.toml` file in cloned registry")
+    end
+    
+    registry = read_registry(joinpath(tmp, "Registry.toml"))
+    verify_registry(registry)
+    
+    # copy to depot
+    regpath = joinpath(depot, "registries", registry["name"])
+    ispath(dirname(regpath)) || mkpath(dirname(regpath))
+    if Pkg.Types.isdir_windows_workaround(regpath)
+        existing_registry = read_registry(joinpath(regpath, "Registry.toml"))
+        @assert registry["uuid"] == existing_registry["uuid"]
+        @info("registry `$(registry["name"])` already exists in `$(Base.contractuser(dirname(regpath)))`")
+    else
+        cp(tmp, regpath)
+        Pkg.Types.printpkgstyle(stdout, :Added, "registry `$(registry["name"])` to `$(Base.contractuser(dirname(regpath)))`")
+    end
+    
 end
-=#
+
+function read_registry(regfile)
+    registry = Pkg.TOML.parsefile(regfile)
+    return registry
+end
+
+const REQUIRED_REGISTRY_ENTRIES = ("name", "uuid", "repo", "packages")
+
+function verify_registry(registry::Dict{String, Any})
+    for key in REQUIRED_REGISTRY_ENTRIES
+        haskey(registry, key) || Pkg.Types.pkgerror("no `$key` entry in `Registry.toml`.")
+    end
+end

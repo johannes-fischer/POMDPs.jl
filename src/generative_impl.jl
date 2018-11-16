@@ -3,7 +3,7 @@
 # This file is long, messy and fragile. One day a more robust paradigm should be used.
 
 function implemented(f::typeof(generate_s), TT::Type)
-    if !method_exists(f, TT)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
@@ -24,11 +24,12 @@ end
     else
         treq = @req transition(::p,::s,::a)
         reqs = [(implemented(treq...), treq...)]
-        failed_synth_warning(@req(generate_s(::p, ::s, ::a, ::rng)), reqs)
+        this = @req(generate_s(::p, ::s, ::a, ::rng))
         return quote
             try
                 $impl # trick the compiler to put the right backedges in
             catch
+                failed_synth_warning($this, $reqs)
                 throw(MethodError(generate_s, (p,s,a,rng)))
             end
         end
@@ -37,7 +38,7 @@ end
 
 
 function implemented(f::typeof(generate_sr), TT::Type)
-    if !method_exists(f, TT)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
@@ -62,11 +63,12 @@ end
         cl = [(implemented(r...), r...) for r in reqs]
         greqs = [@req(generate_s(::p, ::s, ::a, ::AbstractRNG)), @req(reward(::p, ::s, ::a, ::s))]
         gcl = [(implemented(r...), r...) for r in greqs]
-        failed_synth_warning(@req(generate_sr(::p, ::s, ::a, ::rng)), cl, gcl)
+        this = @req(generate_sr(::p, ::s, ::a, ::rng))
         return quote
             try
                 $impl # trick to get the compiler to put the right backedges in
             catch
+                failed_synth_warning($this, $cl, $gcl)
                 throw(MethodError(generate_sr, (p,s,a,rng)))
             end
         end
@@ -74,7 +76,7 @@ end
 end
 
 function implemented(f::typeof(generate_o), TT::Type)
-    if !method_exists(f, TT)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
@@ -96,11 +98,12 @@ end
     else
         oreq = @req observation(::p, ::s, ::a, ::sp)
         reqs = [(implemented(oreq...), oreq...)]
-        failed_synth_warning(@req(generate_o(::p, ::s, ::a, ::sp, ::rng)), reqs)
+        this = @req(generate_o(::p, ::s, ::a, ::sp, ::rng))
         return quote
             try
                 $impl # trick to get the compiler to put the right backedges in
             catch
+                failed_synth_warning($this, $reqs)
                 throw(MethodError(generate_o, (p, s, a, sp, rng)))
             end
         end
@@ -108,7 +111,7 @@ end
 end
 
 function implemented(f::typeof(generate_so), TT::Type)
-    if !method_exists(f, TT)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
@@ -133,11 +136,12 @@ end
         cl = [(implemented(r...), r...) for r in reqs]
         greqs = [@req(generate_s(::p,::s,::a,::AbstractRNG)), @req(generate_o(::p, ::s, ::a, ::s, ::AbstractRNG))]
         gcl = [(implemented(r...), r...) for r in greqs]
-        failed_synth_warning(@req(generate_so(::p, ::s, ::a, ::rng)), cl, gcl)
+        this = @req(generate_so(::p, ::s, ::a, ::rng))
         return quote
             try
                 $impl # trick to get the compiler to put the right backedges in
             catch
+                failed_synth_warning($this, $cl, $gcl)
                 throw(MethodError(generate_so, (p,s,a,rng)))
             end
         end
@@ -146,7 +150,7 @@ end
 
 
 function implemented(f::typeof(generate_sor), TT::Type)
-    if !method_exists(f, TT)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
@@ -180,12 +184,13 @@ end
         cl = [(implemented(r...), r...) for r in reqs]
         greqs = [@req(generate_sr(::p,::s,::a,::AbstractRNG)), @req(generate_o(::p, ::s, ::a, ::s, ::AbstractRNG))]
         gcl = [(implemented(r...), r...) for r in greqs]
-        failed_synth_warning(@req(generate_sor(::p, ::s, ::a, ::rng)), cl, gcl)
+        this = @req(generate_sor(::p, ::s, ::a, ::rng))
         return quote
             try # dirty trick to get the compiler to insert the right backedges
                 $so_impl
                 $sr_impl
             catch
+                failed_synth_warning($this, $cl, $gcl)
                 throw(MethodError(generate_sor, (p,s,a,rng)))
             end
         end
@@ -194,7 +199,7 @@ end
 
 
 function implemented(f::typeof(generate_or), TT::Type)
-    if !method_exists(f, TT)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
@@ -219,11 +224,12 @@ end
         cl = [(implemented(r...), r...) for r in reqs]
         greqs = [@req(generate_o(::p, ::s, ::a, ::s, ::AbstractRNG)), @req(reward(::p,::s,::a,::sp))]
         gcl = [(implemented(r...), r...) for r in greqs]
-        failed_synth_warning(@req(generate_or(::p, ::s, ::a, ::rng)), cl, gcl)
+        this = @req(generate_or(::p, ::s, ::a, ::rng))
         return quote
             try
                 $impl # trick to get the compiler to insert the right backedges
             catch
+                failed_synth_warning($this, $cl, $gcl)
                 throw(MethodError(generate_or, (p,s,a,sp,rng)))
             end
         end
@@ -231,56 +237,59 @@ end
 end
 
 
-function implemented(f::typeof(initial_state), TT::Type)
-    if !method_exists(f, TT)
+function implemented(f::typeof(initialstate), TT::Type)
+    if !hasmethod(f, TT)
         return false
     end
     m = which(f, TT)
-    if m.module == POMDPs && !implemented(initial_state_distribution, Tuple{TT.parameters[1]})
+    if m.module == POMDPs && !implemented(initialstate_distribution, Tuple{TT.parameters[1]})
         return false
     else
         return true
     end
 end
 
-@generated function initial_state(p::Union{POMDP,MDP}, rng::AbstractRNG)
+@generated function initialstate(p::Union{POMDP,MDP}, rng::AbstractRNG)
     impl = quote
-        d = initial_state_distribution(p)
+        d = initialstate_distribution(p)
         return rand(rng, d)
     end
 
-    if implemented(initial_state_distribution, Tuple{p})
+    if implemented(initialstate_distribution, Tuple{p})
         return impl
     else
-        req = @req initial_state_distribution(::p)
+        req = @req initialstate_distribution(::p)
         reqs = [(implemented(req...), req...)]
-        failed_synth_warning(@req(initial_state(::p, ::rng)), reqs)
+        this = @req(initialstate(::p, ::rng))
         return quote
             try
                 $impl # trick to get the compiler to insert the right backedges
             catch
-                throw(MethodError(initial_state, (p, rng)))
+                failed_synth_warning($this, $reqs)
+                throw(MethodError(initialstate, (p, rng)))
             end
         end
     end
 end
 
+
 function failed_synth_warning(gen::Tuple, reqs::Vector, greqs::Vector=[]) 
     io = IOBuffer()
-    show_checked_list(io, reqs)
-    Core.println("""
-WARNING: POMDPs.jl: Could not find or synthesize $(format_method(gen...)). Either implement it directly, or, to automatically synthesize it, implement the following methods from the explicit interface:
-
-$(String(take!(io)))
-    """)
+    ioc = IOContext(io, stderr)
+    print(ioc, "Hint: Either implement ")
+    printstyled(ioc, format_method(gen...), color=:blue)
+    println(ioc, " directly, or, to automatically synthesize it, implement the following methods from the explicit interface:\n")
+    show_checked_list(ioc, reqs)
     if !isempty(greqs)
-        io = IOBuffer()
-        show_checked_list(io, greqs)
-        Core.println("""
-OR implement the following methods from the generative interface:
-
-$(String(take!(io)))
-                     """)
+        println(ioc, """
+    \nOR implement the following methods from the generative interface:
+    """)
+        show_checked_list(ioc, greqs)
     end
-    Core.println("([✔] = already implemented correctly; [X] = missing)")
+    println(ioc, "\n([✔] = already implemented correctly; [X] = missing)")
+    @warn("""
+          POMDPs.jl: Could not find or synthesize $(format_method(gen...)). Note that this is only a warning to help diagnose problems; consider fixing errors first.
+          
+          $(String(take!(io)))
+          """)
 end

@@ -57,7 +57,7 @@ These functions return *distributions*.
 ```@docs
 transition
 observation
-initial_state_distribution
+initialstate_distribution
 ```
 
 ### [Generative](@id generative_api)
@@ -71,7 +71,7 @@ generate_sr
 generate_so
 generate_or
 generate_sor
-initial_state
+initialstate
 ```
 
 ### [Common](@id common_api)
@@ -82,14 +82,13 @@ actions
 observations
 reward
 isterminal
-isterminal_obs
 discount
 n_states
 n_actions
 n_observations
-state_index
-action_index
-obs_index
+stateindex
+actionindex
+obsindex
 convert_s
 convert_a
 convert_o
@@ -103,7 +102,7 @@ pdf
 mode
 mean
 dimensions
-iterator
+support
 sampletype
 ```
 
@@ -137,9 +136,9 @@ The following functions are not part of the API for specifying and solving POMDP
 ### Type Inference
 
 ```@docs
-state_type
-action_type
-obs_type
+statetype
+actiontype
+obstype
 ```
 
 ### Requirements Specification
@@ -162,8 +161,6 @@ implemented
 ### Utility Tools
 
 ```@docs
-add
-add_all
-test_all
+add_registry
 available
 ```
